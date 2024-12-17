@@ -568,29 +568,6 @@ if [[ "$confirm" == "y" ]]; then
     echo "Source address verification has been enabled for all and default interfaces."
 fi
 
-read -p "Do you want to check for and remove the malicious PAM backdoor if present? (y/n) " confirm
-if [[ "$confirm" == "y" ]]; then
-    MALICIOUS_LINE="^\s*auth\s+sufficient\s+pam_exec\.so\s+expose_authtok\s+quiet\s+/lib/x86_64-linux-gnu/security/pam-bd\s*$"
-    PAM_FILE="/etc/pam.d/common-auth"
-    BACKUP_FILE="/etc/pam.d/common-auth.bak"
-    if grep -Pq "$MALICIOUS_LINE" /etc/pam.d/common-auth; then
-        echo "Malicious PAM backdoor detected in /etc/pam.d/common-auth. Removing..."
-        sudo cp /etc/pam.d/common-auth /etc/pam.d/common-auth.bak
-        echo "Backup of /etc/pam.d/common-auth created at /etc/pam.d/common-auth.bak"
-        sudo sed -i "/$MALICIOUS_LINE/d" /etc/pam.d/common-auth
-        echo "Malicious PAM backdoor removed from /etc/pam.d/common-auth."
-        if sudo pam-auth-update --force; then
-            echo "PAM configuration updated and verified successfully."
-        else
-            echo "Error verifying PAM configuration! Restoring from backup..."
-            sudo cp /etc/pam.d/common-auth.bak /etc/pam.d/common-auth
-            echo "Backup restored. Please review the PAM configuration manually."
-        fi
-    else
-        echo "No malicious PAM backdoor found in /etc/pam.d/common-auth."
-    fi
-fi
-
 read -p "Do you want to configure the account lockout policy? (y/n) " confirm
 if [[ "$confirm" == "y" ]]; then
     AUTH_FAIL_LINE="auth    [default=die]    pam_faillock.so authfail"
